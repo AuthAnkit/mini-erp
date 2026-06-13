@@ -11,6 +11,19 @@ import ManufacturingPage from './pages/manufacturing/ManufacturingPage';
 import AuditPage from './pages/audit/AuditPage';
 import VendorsPage from './pages/purchase/VendorsPage';
 import CustomersPage from './pages/sales/CustomersPage';
+import DemandForecastPage from './pages/analytics/DemandForecastPage';
+import SmartProcurementPage from './pages/analytics/SmartProcurementPage';
+import ManufacturingPriorityPage from './pages/analytics/ManufacturingPriorityPage';
+import AutoManufacturingPage from './pages/analytics/AutoManufacturingPage';
+import ShortageAlertsPage from './pages/analytics/ShortageAlertsPage';
+import InventoryHeatMapPage from './pages/analytics/InventoryHeatMapPage';
+import DeadStockPage from './pages/analytics/DeadStockPage';
+import RankingsPage from './pages/analytics/RankingsPage';
+import BusinessHealthPage from './pages/analytics/BusinessHealthPage';
+import ProfitLeakPage from './pages/analytics/ProfitLeakPage';
+import ERPStoryPage from './pages/analytics/ERPStoryPage';
+import BusinessSimulatorPage from './pages/analytics/BusinessSimulatorPage';
+import ChatbotPage from './pages/analytics/ChatbotPage';
 
 function ProtectedRoute({ children, roles }) {
   const { user, loading } = useAuth();
@@ -72,6 +85,20 @@ function AppRoutes() {
           <Layout><AuditPage /></Layout>
         </ProtectedRoute>
       } />
+      {/* Intelligence Routes */}
+      <Route path="/analytics/health" element={<ProtectedRoute roles={['ADMIN','OWNER']}><Layout><BusinessHealthPage /></Layout></ProtectedRoute>} />
+      <Route path="/analytics/demand" element={<ProtectedRoute roles={['ADMIN','OWNER','SALES','INVENTORY']}><Layout><DemandForecastPage /></Layout></ProtectedRoute>} />
+      <Route path="/analytics/procurement" element={<ProtectedRoute roles={['ADMIN','OWNER','PURCHASE']}><Layout><SmartProcurementPage /></Layout></ProtectedRoute>} />
+      <Route path="/analytics/mfg-priority" element={<ProtectedRoute roles={['ADMIN','OWNER','MANUFACTURING']}><Layout><ManufacturingPriorityPage /></Layout></ProtectedRoute>} />
+      <Route path="/analytics/auto-mfg" element={<ProtectedRoute roles={['ADMIN','OWNER','MANUFACTURING']}><Layout><AutoManufacturingPage /></Layout></ProtectedRoute>} />
+      <Route path="/analytics/shortages" element={<ProtectedRoute roles={['ADMIN','OWNER','MANUFACTURING','INVENTORY']}><Layout><ShortageAlertsPage /></Layout></ProtectedRoute>} />
+      <Route path="/analytics/heatmap" element={<ProtectedRoute roles={['ADMIN','OWNER','INVENTORY']}><Layout><InventoryHeatMapPage /></Layout></ProtectedRoute>} />
+      <Route path="/analytics/dead-stock" element={<ProtectedRoute roles={['ADMIN','OWNER','INVENTORY']}><Layout><DeadStockPage /></Layout></ProtectedRoute>} />
+      <Route path="/analytics/rankings" element={<ProtectedRoute roles={['ADMIN','OWNER']}><Layout><RankingsPage /></Layout></ProtectedRoute>} />
+      <Route path="/analytics/profit-leaks" element={<ProtectedRoute roles={['ADMIN','OWNER']}><Layout><ProfitLeakPage /></Layout></ProtectedRoute>} />
+      <Route path="/analytics/stories" element={<ProtectedRoute roles={['ADMIN','OWNER']}><Layout><ERPStoryPage /></Layout></ProtectedRoute>} />
+      <Route path="/analytics/simulator" element={<ProtectedRoute roles={['ADMIN','OWNER']}><Layout><BusinessSimulatorPage /></Layout></ProtectedRoute>} />
+      <Route path="/analytics/chatbot" element={<ProtectedRoute roles={['ADMIN','OWNER']}><Layout><ChatbotPage /></Layout></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   );

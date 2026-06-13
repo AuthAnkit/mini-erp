@@ -30,34 +30,26 @@ public class BusinessSimulation {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    // Simulation inputs
     @Column(nullable = false)
-    private Double salesGrowthPercentage;
-
-    @Column(nullable = false)
-    private Double demandSpikePercentage;
-
-    @Column(nullable = false)
-    private Integer simulationDays;
-
-    // Simulation results
-    @Column(columnDefinition = "TEXT")
-    private String resultsSummary;
-
-    @Column(nullable = false)
-    private BigDecimal projectedRevenue;
-
-    @Column(nullable = false)
-    private Double projectedInventoryNeeded;
-
-    @Column(nullable = false)
-    private Integer projectedManufacturingCapacityNeeded;
-
-    @Column(nullable = false)
-    private Double stockoutRiskDays;
+    private String scenarioType;
 
     @Column(columnDefinition = "TEXT")
-    private String recommendations;
+    private String parameters;
+
+    @Column(nullable = false)
+    private Double projectedRevenue;
+
+    @Column(nullable = false)
+    private Double projectedCosts;
+
+    @Column(nullable = false)
+    private Double projectedProfit;
+
+    @Column(nullable = false)
+    private Double estimatedImpact;
+
+    @Column(columnDefinition = "TEXT")
+    private String aiInsights;
 
     @Column(nullable = false)
     private String simulationStatus; // DRAFT, EXECUTED, COMPLETED, ARCHIVED

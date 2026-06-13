@@ -21,35 +21,27 @@ public class SmartProcurementService {
 
     private final ProcurementRecommendationRepository procurementRepository;
     private final ProductRepository productRepository;
-    private final StockLedgerRepository stockLedgerRepository;
-    private final SalesOrderLineRepository salesOrderLineRepository;
+    private final SalesOrderRepository salesOrderRepository;
     private final VendorRepository vendorRepository;
 
-    /**
-     * Generate procurement recommendations for all products
-     */
     public void generateProcurementRecommendations() {
-        List<Product> allProducts = productRepository.findAll();
-        for (Product product : allProducts) {
-            generateRecommendationForProduct(product.getId());
-        }
+        // Clear old pending recommendations before regenerating
+        List<ProcurementRecommendation> old = procurementRepository.findPendingRecommendations();
+        procurementRepository.deleteAll(old);
+
+        productRepository.findAll().forEach(p -> generateRecommendationForProduct(p.getId()));
     }
 
-    /**
-     * Generate recommendation for a specific product
-     */
     public ProcurementRecommendation generateRecommendationForProduct(Long productId) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
-        double currentStock = product.getOnHandQty();
-        double averageDailyUsage = calculateAverageDailyUsage(productId);
-        int daysUntilStockout = calculateDaysUntilStockout(currentStock, averageDailyUsage);
-
-        String urgencyLevel = determineUrgencyLevel(daysUntilStockout);
-        double recommendedQuantity = calculateRecommendedQuantity(productId, averageDailyUsage);
-
-        String reason = generateRecommendationReason(currentStock, averageDailyUsage, daysUntilStockout);
+        double currentStock       = product.getOnHandQty();
+        double averageDailyUsage  = calculateAverageDailyUsage(productId);
+        int    daysUntilStockout  = calculateDaysUntilStockout(currentStock, averageDailyUsage);
+        String urgencyLevel       = determineUrgencyLevel(daysUntilStockout);
+        double recommendedQty     = calculateRecommendedQuantity(averageDailyUsage);
+        String reason             = buildReason(currentStock, averageDailyUsage, daysUntilStockout);
 
         ProcurementRecommendation recommendation = ProcurementRecommendation.builder()
                 .product(product)
@@ -58,7 +50,7 @@ public class SmartProcurementService {
                 .currentStock(currentStock)
                 .averageDailyUsage(averageDailyUsage)
                 .daysUntilStockout(daysUntilStockout)
-                .recommendedQuantity(recommendedQuantity)
+                .recommendedQuantity(recommendedQty)
                 .urgencyLevel(urgencyLevel)
                 .estimatedDepletion((double) daysUntilStockout)
                 .reason(reason)
@@ -71,67 +63,52 @@ public class SmartProcurementService {
 
     private double calculateAverageDailyUsage(Long productId) {
         LocalDateTime thirtyDaysAgo = LocalDateTime.now().minusDays(30);
-        return salesOrderLineRepository.findAll().stream()
+        List<SalesOrderLine> lines = salesOrderRepository.findAll().stream()
+                .filter(so -> so.getCreationDate().isAfter(thirtyDaysAgo))
+                .flatMap(so -> so.getLines().stream())
                 .filter(line -> line.getProduct().getId().equals(productId))
-                .filter(line -> line.getSalesOrder().getCreationDate().isAfter(thirtyDaysAgo))
-                .mapToDouble(SalesOrderLine::getQuantity)
-                .average()
-                .orElse(0.0);
+                .collect(Collectors.toList());
+
+        return lines.stream().mapToDouble(SalesOrderLine::getOrderedQty).average().orElse(0.0);
     }
 
     private int calculateDaysUntilStockout(double currentStock, double dailyUsage) {
         if (dailyUsage <= 0) return Integer.MAX_VALUE;
-        return (int) (currentStock / dailyUsage);
+        long days = (long)(currentStock / dailyUsage);
+        return days > 9999 ? 9999 : (int) days;
     }
 
-    private String determineUrgencyLevel(int daysUntilStockout) {
-        if (daysUntilStockout <= 2) return "CRITICAL";
-        if (daysUntilStockout <= 7) return "HIGH";
-        if (daysUntilStockout <= 15) return "MEDIUM";
+    private String determineUrgencyLevel(int days) {
+        if (days <= 2)  return "CRITICAL";
+        if (days <= 7)  return "HIGH";
+        if (days <= 15) return "MEDIUM";
         return "LOW";
     }
 
-    private double calculateRecommendedQuantity(Long productId, double dailyUsage) {
-        // Recommend 60 days of stock
-        return dailyUsage * 60;
+    private double calculateRecommendedQuantity(double dailyUsage) {
+        return Math.max(dailyUsage * 60, 10);
     }
 
-    private String generateRecommendationReason(double currentStock, double dailyUsage, int daysUntilStockout) {
-        if (daysUntilStockout <= 2) {
+    private String buildReason(double currentStock, double dailyUsage, int daysUntilStockout) {
+        if (daysUntilStockout <= 2)
             return "CRITICAL: Stock will be exhausted within 2 days at current consumption rate";
-        }
-        if (daysUntilStockout <= 7) {
-            return "HIGH: Stock will be exhausted within 7 days. Immediate procurement required.";
-        }
-        if (daysUntilStockout <= 15) {
-            return "MEDIUM: Stock available for 15 days. Plan procurement in advance.";
-        }
+        if (daysUntilStockout <= 7)
+            return "HIGH: Stock will run out within 7 days. Immediate procurement required.";
+        if (daysUntilStockout <= 15)
+            return "MEDIUM: Stock available for ~15 days. Plan procurement in advance.";
         return "LOW: Stock level is healthy. Consider routine procurement.";
     }
 
-    /**
-     * Get all pending procurement recommendations sorted by urgency
-     */
     public List<Map<String, Object>> getPendingRecommendations() {
-        return procurementRepository.findPendingRecommendations()
-                .stream()
-                .map(this::formatRecommendation)
-                .collect(Collectors.toList());
+        return procurementRepository.findPendingRecommendations().stream()
+                .map(this::formatRecommendation).collect(Collectors.toList());
     }
 
-    /**
-     * Get critical procurement recommendations (CRITICAL and HIGH urgency)
-     */
     public List<Map<String, Object>> getCriticalRecommendations() {
-        return procurementRepository.findCriticalRecommendations()
-                .stream()
-                .map(this::formatRecommendation)
-                .collect(Collectors.toList());
+        return procurementRepository.findCriticalRecommendations().stream()
+                .map(this::formatRecommendation).collect(Collectors.toList());
     }
 
-    /**
-     * Approve a procurement recommendation
-     */
     public void approveProcurementRecommendation(Long recommendationId) {
         ProcurementRecommendation rec = procurementRepository.findById(recommendationId)
                 .orElseThrow(() -> new RuntimeException("Recommendation not found"));
@@ -140,17 +117,17 @@ public class SmartProcurementService {
     }
 
     private Map<String, Object> formatRecommendation(ProcurementRecommendation rec) {
-        return Map.of(
-                "recommendationId", rec.getId(),
-                "productId", rec.getProduct().getId(),
-                "productName", rec.getProduct().getName(),
-                "currentStock", rec.getCurrentStock(),
-                "averageDailyUsage", String.format("%.2f", rec.getAverageDailyUsage()),
-                "daysUntilStockout", rec.getDaysUntilStockout(),
-                "recommendedQuantity", rec.getRecommendedQuantity(),
-                "urgencyLevel", rec.getUrgencyLevel(),
-                "reason", rec.getReason(),
-                "preferredVendor", rec.getPreferredVendor() != null ? rec.getPreferredVendor().getName() : "Not Set"
-        );
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("recommendationId", rec.getId());
+        map.put("productId", rec.getProduct().getId());
+        map.put("productName", rec.getProduct().getName());
+        map.put("currentStock", rec.getCurrentStock());
+        map.put("averageDailyUsage", String.format("%.2f", rec.getAverageDailyUsage()));
+        map.put("daysUntilStockout", rec.getDaysUntilStockout() == 9999 ? "∞" : rec.getDaysUntilStockout());
+        map.put("recommendedQuantity", Math.round(rec.getRecommendedQuantity()));
+        map.put("urgencyLevel", rec.getUrgencyLevel());
+        map.put("reason", rec.getReason());
+        map.put("preferredVendor", rec.getPreferredVendor() != null ? rec.getPreferredVendor().getName() : "Not Set");
+        return map;
     }
 }

@@ -32,6 +32,24 @@ const navGroups = [
     ]
   },
   {
+    label: 'Intelligence',
+    items: [
+      { path: '/analytics/health', label: 'Business Health', icon: '❤️', roles: ['ADMIN','OWNER'] },
+      { path: '/analytics/demand', label: 'Demand Forecast', icon: '📈', roles: ['ADMIN','OWNER','SALES','INVENTORY'] },
+      { path: '/analytics/procurement', label: 'Smart Procurement', icon: '🤖', roles: ['ADMIN','OWNER','PURCHASE'] },
+      { path: '/analytics/mfg-priority', label: 'Mfg Priority', icon: '🔥', roles: ['ADMIN','OWNER','MANUFACTURING'] },
+      { path: '/analytics/auto-mfg', label: 'Auto Manufacturing', icon: '⚡', roles: ['ADMIN','OWNER','MANUFACTURING'] },
+      { path: '/analytics/shortages', label: 'Shortage Alerts', icon: '⚠️', roles: ['ADMIN','OWNER','MANUFACTURING','INVENTORY'] },
+      { path: '/analytics/heatmap', label: 'Stock Heat Map', icon: '🗺️', roles: ['ADMIN','OWNER','INVENTORY'] },
+      { path: '/analytics/dead-stock', label: 'Dead Stock', icon: '💀', roles: ['ADMIN','OWNER','INVENTORY'] },
+      { path: '/analytics/rankings', label: 'Rankings', icon: '🏆', roles: ['ADMIN','OWNER'] },
+      { path: '/analytics/profit-leaks', label: 'Profit Leaks', icon: '💸', roles: ['ADMIN','OWNER'] },
+      { path: '/analytics/stories', label: 'ERP Story', icon: '📰', roles: ['ADMIN','OWNER'] },
+      { path: '/analytics/simulator', label: 'Business Simulator', icon: '🕹️', roles: ['ADMIN','OWNER'] },
+      { path: '/analytics/chatbot', label: 'AI Chatbot', icon: '💬', roles: ['ADMIN','OWNER'] },
+    ]
+  },
+  {
     label: 'Administration',
     items: [
       { path: '/audit', label: 'Audit Logs', icon: '📋', roles: ['ADMIN','OWNER'] },

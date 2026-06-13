@@ -21,37 +21,26 @@ public class DemandPredictionService {
 
     private final DemandForecastRepository demandForecastRepository;
     private final SalesOrderRepository salesOrderRepository;
-    private final SalesOrderLineRepository salesOrderLineRepository;
     private final StockLedgerRepository stockLedgerRepository;
     private final ProductRepository productRepository;
 
-    /**
-     * Generate demand forecast for a product
-     */
     public DemandForecast generateDemandForecast(Long productId) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
-        // Calculate sales trends
-        LocalDate thirtyDaysAgo = LocalDate.now().minusDays(30);
-        LocalDate ninetyDaysAgo = LocalDate.now().minusDays(90);
-
-        double dailyAvgSales = calculateAverageDailySales(productId, 30);
-        double weeklyAvgSales = calculateAverageWeeklySales(productId, 30);
+        double dailyAvgSales   = calculateAverageDailySales(productId, 30);
+        double weeklyAvgSales  = calculateAverageWeeklySales(productId, 30);
         double monthlyAvgSales = calculateAverageMonthlySales(productId, 90);
 
-        // Predict next month demand
         double predictedDemand = predictNextMonthDemand(dailyAvgSales, weeklyAvgSales, monthlyAvgSales);
 
-        // Calculate trend
-        double currentMonthSales = calculateAverageMonthlySales(productId, 30);
+        double currentMonthSales  = calculateAverageMonthlySales(productId, 30);
         double previousMonthSales = calculateAverageMonthlySales(productId, 60);
-        double trendPercentage = calculateTrendPercentage(previousMonthSales, currentMonthSales);
+        double trendPercentage    = calculateTrendPercentage(previousMonthSales, currentMonthSales);
 
-        String trendDirection = trendPercentage > 5 ? "INCREASING" : 
-                               trendPercentage < -5 ? "DECREASING" : "STABLE";
+        String trendDirection = trendPercentage > 5 ? "INCREASING" :
+                                trendPercentage < -5 ? "DECREASING" : "STABLE";
 
-        // Determine confidence
         int confidencePercentage = calculateConfidence(dailyAvgSales, monthlyAvgSales);
 
         DemandForecast forecast = DemandForecast.builder()
@@ -71,14 +60,18 @@ public class DemandPredictionService {
         return demandForecastRepository.save(forecast);
     }
 
+    private List<SalesOrderLine> getLinesForProduct(Long productId, LocalDateTime since) {
+        return salesOrderRepository.findAll().stream()
+                .filter(so -> so.getCreationDate().isAfter(since))
+                .flatMap(so -> so.getLines().stream())
+                .filter(line -> line.getProduct().getId().equals(productId))
+                .collect(Collectors.toList());
+    }
+
     private double calculateAverageDailySales(Long productId, int days) {
         LocalDateTime startDate = LocalDateTime.now().minusDays(days);
-        return salesOrderLineRepository.findAll().stream()
-                .filter(line -> line.getProduct().getId().equals(productId))
-                .filter(line -> line.getSalesOrder().getCreationDate().isAfter(startDate))
-                .mapToDouble(SalesOrderLine::getQuantity)
-                .average()
-                .orElse(0.0);
+        List<SalesOrderLine> lines = getLinesForProduct(productId, startDate);
+        return lines.stream().mapToDouble(SalesOrderLine::getOrderedQty).average().orElse(0.0);
     }
 
     private double calculateAverageWeeklySales(Long productId, int days) {
@@ -87,15 +80,11 @@ public class DemandPredictionService {
 
     private double calculateAverageMonthlySales(Long productId, int days) {
         LocalDateTime startDate = LocalDateTime.now().minusDays(days);
-        return salesOrderLineRepository.findAll().stream()
-                .filter(line -> line.getProduct().getId().equals(productId))
-                .filter(line -> line.getSalesOrder().getCreationDate().isAfter(startDate))
-                .mapToDouble(SalesOrderLine::getQuantity)
-                .sum();
+        List<SalesOrderLine> lines = getLinesForProduct(productId, startDate);
+        return lines.stream().mapToDouble(SalesOrderLine::getOrderedQty).sum();
     }
 
     private double predictNextMonthDemand(double daily, double weekly, double monthly) {
-        // Weight-based prediction: 30% daily, 30% weekly, 40% monthly average
         return (daily * 30 * 0.3) + (weekly * 4.3 * 0.3) + (monthly * 0.4);
     }
 
@@ -114,63 +103,63 @@ public class DemandPredictionService {
     }
 
     private String detectSeasonality(Long productId) {
-        LocalDate sixMonthsAgo = LocalDate.now().minusMonths(6);
-        List<SalesOrderLine> recentSales = salesOrderLineRepository.findAll().stream()
-                .filter(line -> line.getProduct().getId().equals(productId))
-                .filter(line -> line.getSalesOrder().getCreationDate().isAfter(sixMonthsAgo.atStartOfDay()))
-                .collect(Collectors.toList());
+        LocalDateTime sixMonthsAgo = LocalDateTime.now().minusMonths(6);
+        List<SalesOrderLine> recentSales = getLinesForProduct(productId, sixMonthsAgo);
 
-        // Analyze monthly variance
         Map<Integer, Double> monthlySales = new HashMap<>();
         for (SalesOrderLine line : recentSales) {
             int month = line.getSalesOrder().getCreationDate().getMonthValue();
-            monthlySales.put(month, monthlySales.getOrDefault(month, 0.0) + line.getQuantity());
+            monthlySales.merge(month, line.getOrderedQty(), Double::sum);
         }
 
         if (monthlySales.isEmpty()) return "NO_DATA";
 
         double avgSales = monthlySales.values().stream().mapToDouble(Double::doubleValue).average().orElse(0);
         double maxSales = monthlySales.values().stream().mapToDouble(Double::doubleValue).max().orElse(0);
-        double variance = maxSales / avgSales;
+        double variance = avgSales > 0 ? maxSales / avgSales : 1;
 
         if (variance > 2) return "HIGHLY_SEASONAL";
         if (variance > 1.5) return "SEASONAL";
         return "NON_SEASONAL";
     }
 
-    /**
-     * Get all products with increasing demand
-     */
-    public List<Map<String, Object>> getIncreasingDemandProducts() {
-        LocalDate thirtyDaysAgo = LocalDate.now().minusDays(30);
-        return demandForecastRepository.findProductsWithIncreasingDemand(thirtyDaysAgo, LocalDate.now())
-                .stream()
-                .map(this::formatForecastResponse)
+    public List<Map<String, Object>> generateForecastsForAllProducts() {
+        return productRepository.findAll().stream()
+                .map(p -> formatForecastResponse(generateDemandForecast(p.getId())))
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Get all products with decreasing demand
-     */
+    public List<Map<String, Object>> getIncreasingDemandProducts() {
+        LocalDate thirtyDaysAgo = LocalDate.now().minusDays(30);
+        return demandForecastRepository.findProductsWithIncreasingDemand(thirtyDaysAgo, LocalDate.now())
+                .stream().map(this::formatForecastResponse).collect(Collectors.toList());
+    }
+
     public List<Map<String, Object>> getDecreasingDemandProducts() {
         LocalDate thirtyDaysAgo = LocalDate.now().minusDays(30);
         return demandForecastRepository.findProductsWithDecreasingDemand(thirtyDaysAgo, LocalDate.now())
-                .stream()
+                .stream().map(this::formatForecastResponse).collect(Collectors.toList());
+    }
+
+    public List<Map<String, Object>> getAllForecasts() {
+        return demandForecastRepository.findAll().stream()
+                .sorted(Comparator.comparing(DemandForecast::getCreatedAt).reversed())
                 .map(this::formatForecastResponse)
                 .collect(Collectors.toList());
     }
 
     private Map<String, Object> formatForecastResponse(DemandForecast df) {
-        return Map.of(
-                "productId", df.getProduct().getId(),
-                "productName", df.getProduct().getName(),
-                "forecastDate", df.getForecastDate(),
-                "predictedDemand", df.getPredictedDemand(),
-                "confidencePercentage", df.getConfidencePercentage(),
-                "trendPercentage", df.getTrendPercentage(),
-                "trendDirection", df.getTrendDirection(),
-                "monthlyAvgSales", df.getMonthlyAvgSales(),
-                "seasonalityNote", df.getSeasonalityNote()
-        );
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("productId", df.getProduct().getId());
+        map.put("productName", df.getProduct().getName());
+        map.put("forecastDate", df.getForecastDate());
+        map.put("predictedDemand", Math.round(df.getPredictedDemand() * 10.0) / 10.0);
+        map.put("confidencePercentage", df.getConfidencePercentage());
+        map.put("trendPercentage", Math.round(df.getTrendPercentage() != null ? df.getTrendPercentage() * 10.0 : 0) / 10.0);
+        map.put("trendDirection", df.getTrendDirection());
+        map.put("monthlyAvgSales", Math.round(df.getMonthlyAvgSales() * 10.0) / 10.0);
+        map.put("dailyAvgSales", Math.round(df.getDailyAvgSales() * 10.0) / 10.0);
+        map.put("seasonalityNote", df.getSeasonalityNote());
+        return map;
     }
 }

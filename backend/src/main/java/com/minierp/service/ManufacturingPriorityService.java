@@ -118,7 +118,7 @@ public class ManufacturingPriorityService {
         double customerRevenue = salesOrderRepository.findAll().stream()
                 .filter(so -> so.getCustomer().getId().equals(customer.getId()))
                 .flatMap(so -> so.getLines().stream())
-                .mapToDouble(line -> line.getUnitPrice().doubleValue() * line.getQuantity())
+                .mapToDouble(line -> line.getSalesPrice().doubleValue() * line.getOrderedQty())
                 .sum();
 
         // Score based on customer value
@@ -131,7 +131,7 @@ public class ManufacturingPriorityService {
         if (mo.getComponents() == null || mo.getComponents().isEmpty()) return 100;
 
         long availableComponents = mo.getComponents().stream()
-                .filter(comp -> comp.getProduct().getFreeToUseQty() >= comp.getRequiredQty())
+                .filter(comp -> comp.getProduct().getFreeToUseQty() >= comp.getToConsumeQty())
                 .count();
 
         return (int) ((availableComponents * 100) / mo.getComponents().size());
@@ -170,18 +170,18 @@ public class ManufacturingPriorityService {
 
     private Map<String, Object> formatPriorityResponse(ManufacturingPriority mp) {
         ManufacturingOrder mo = mp.getManufacturingOrder();
-        return Map.of(
-                "rank", mp.getPriorityRank(),
-                "orderId", mo.getId(),
-                "orderRef", mo.getRef(),
-                "productName", mo.getFinishedProduct().getName(),
-                "quantity", mo.getQuantity(),
-                "priorityScore", String.format("%.2f", mp.getPriorityScore()),
-                "priorityLevel", mp.getPriorityLevel(),
-                "urgencyScore", mp.getUrgencyScore(),
-                "orderValue", mp.getOrderValue(),
-                "customerImportance", mp.getCustomerImportanceScore(),
-                "componentAvailability", mp.getComponentAvailabilityScore()
-        );
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("rank", mp.getPriorityRank());
+        result.put("orderId", mo.getId());
+        result.put("orderRef", mo.getRef());
+        result.put("productName", mo.getFinishedProduct().getName());
+        result.put("quantity", mo.getQuantity());
+        result.put("priorityScore", String.format("%.2f", mp.getPriorityScore()));
+        result.put("priorityLevel", mp.getPriorityLevel());
+        result.put("urgencyScore", mp.getUrgencyScore());
+        result.put("orderValue", mp.getOrderValue());
+        result.put("customerImportance", mp.getCustomerImportanceScore());
+        result.put("componentAvailability", mp.getComponentAvailabilityScore());
+        return result;
     }
 }
