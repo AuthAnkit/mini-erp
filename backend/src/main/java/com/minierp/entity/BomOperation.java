@@ -17,7 +17,7 @@ public class BomOperation {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)
-    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"bomComponents", "bomOperations", "hibernateLazyInitializer", "handler"})
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private Product product;
 
     @Column(nullable = false)

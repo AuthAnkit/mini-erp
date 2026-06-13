@@ -18,6 +18,7 @@ public class PurchaseOrderLine {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "purchase_order_id", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private PurchaseOrder purchaseOrder;
 
     @ManyToOne(fetch = FetchType.EAGER)

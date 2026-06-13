@@ -19,6 +19,7 @@ public class MOWorkOrder {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "manufacturing_order_id", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private ManufacturingOrder manufacturingOrder;
 
     @Column(nullable = false)

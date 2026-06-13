@@ -19,6 +19,7 @@ public class BomComponent {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_product_id", nullable = false)
     @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"bomComponents", "bomOperations", "hibernateLazyInitializer", "handler"})
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private Product parentProduct;
 
     // The component product (can itself have a BoM - multi-level!)

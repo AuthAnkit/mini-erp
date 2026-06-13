@@ -18,6 +18,7 @@ public class SalesOrderLine {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sales_order_id", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private SalesOrder salesOrder;
 
     @ManyToOne(fetch = FetchType.EAGER)
