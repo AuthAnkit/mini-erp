@@ -27,6 +27,7 @@ const navGroups = [
   {
     label: 'Contacts',
     items: [
+      { path: '/customers', label: 'Customers', icon: '👥', roles: ['ADMIN','OWNER','SALES'] },
       { path: '/vendors', label: 'Vendors', icon: '🤝', roles: ['ADMIN','OWNER','PURCHASE'] },
     ]
   },

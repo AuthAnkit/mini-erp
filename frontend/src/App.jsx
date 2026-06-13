@@ -10,6 +10,7 @@ import PurchasePage from './pages/purchase/PurchasePage';
 import ManufacturingPage from './pages/manufacturing/ManufacturingPage';
 import AuditPage from './pages/audit/AuditPage';
 import VendorsPage from './pages/purchase/VendorsPage';
+import CustomersPage from './pages/sales/CustomersPage';
 
 function ProtectedRoute({ children, roles }) {
   const { user, loading } = useAuth();
@@ -44,6 +45,11 @@ function AppRoutes() {
       <Route path="/sales" element={
         <ProtectedRoute roles={['ADMIN','OWNER','SALES']}>
           <Layout><SalesPage /></Layout>
+        </ProtectedRoute>
+      } />
+      <Route path="/customers" element={
+        <ProtectedRoute roles={['ADMIN','OWNER','SALES']}>
+          <Layout><CustomersPage /></Layout>
         </ProtectedRoute>
       } />
       <Route path="/purchase" element={
