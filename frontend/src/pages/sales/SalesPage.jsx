@@ -190,7 +190,8 @@ export default function SalesPage() {
                       <th className="text-left py-2">Product</th>
                       <th className="text-right py-2">Ordered</th>
                       <th className="text-right py-2">Delivered</th>
-                      <th className="text-right py-2">Price</th>
+                      <th className="text-right py-2">Price/Unit</th>
+                      <th className="text-right py-2">Subtotal</th>
                       {deliveryMode && <th className="text-right py-2">Deliver Qty</th>}
                     </tr>
                   </thead>
@@ -201,6 +202,7 @@ export default function SalesPage() {
                         <td className="py-2 text-right text-gray-300">{line.orderedQty}</td>
                         <td className="py-2 text-right text-emerald-400">{line.deliveredQty}</td>
                         <td className="py-2 text-right text-gray-300">₹{line.salesPrice}</td>
+                        <td className="py-2 text-right text-indigo-300 font-semibold">₹{(line.orderedQty * line.salesPrice).toFixed(2)}</td>
                         {deliveryMode && (
                           <td className="py-2 text-right">
                             <input type="number" min="0" max={line.orderedQty - line.deliveredQty}
@@ -213,6 +215,13 @@ export default function SalesPage() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+
+              <div className="flex justify-between items-center mb-5 p-3 bg-[#0f1117] rounded-lg border border-[#2a2d3e]">
+                <span className="text-sm text-gray-400 font-semibold uppercase tracking-wider">Order Total</span>
+                <span className="text-2xl font-bold text-indigo-400">
+                  ₹{selected.lines?.reduce((sum, l) => sum + (l.orderedQty * l.salesPrice), 0).toFixed(2)}
+                </span>
               </div>
 
               {/* Actions */}

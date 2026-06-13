@@ -201,7 +201,8 @@ export default function PurchasePage() {
                     <th className="text-left py-2">Product</th>
                     <th className="text-right py-2">Ordered</th>
                     <th className="text-right py-2">Received</th>
-                    <th className="text-right py-2">Cost Price</th>
+                    <th className="text-right py-2">Cost/Unit</th>
+                    <th className="text-right py-2">Subtotal</th>
                     {receiveMode && <th className="text-right py-2">Receive Qty</th>}
                   </tr>
                 </thead>
@@ -212,6 +213,7 @@ export default function PurchasePage() {
                       <td className="py-2 text-right text-gray-300">{line.orderedQty}</td>
                       <td className="py-2 text-right text-emerald-400">{line.receivedQty}</td>
                       <td className="py-2 text-right text-gray-300">₹{line.costPrice}</td>
+                      <td className="py-2 text-right text-green-300 font-semibold">₹{(line.orderedQty * line.costPrice).toFixed(2)}</td>
                       {receiveMode && (
                         <td className="py-2 text-right">
                           <input type="number" min="0" max={line.orderedQty - line.receivedQty}
@@ -224,6 +226,13 @@ export default function PurchasePage() {
                   ))}
                 </tbody>
               </table>
+
+              <div className="flex justify-between items-center mb-5 p-3 bg-[#0f1117] rounded-lg border border-[#2a2d3e]">
+                <span className="text-sm text-gray-400 font-semibold uppercase tracking-wider">Order Total</span>
+                <span className="text-2xl font-bold text-green-400">
+                  ₹{selected.lines?.reduce((sum, l) => sum + (l.orderedQty * l.costPrice), 0).toFixed(2)}
+                </span>
+              </div>
 
               <div className="flex gap-2">
                 {selected.status === 'DRAFT' && (
