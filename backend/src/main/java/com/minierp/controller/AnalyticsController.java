@@ -31,12 +31,21 @@ public class AnalyticsController {
     private final ProfitLeakDetectorService profitLeakDetectorService;
     private final ERPStoryService erpStoryService;
     private final BusinessSimulatorService businessSimulatorService;
+    private final ManufacturingPriorityService manufacturingPriorityService;
 
     // Feature 1: Demand Forecasts
     @GetMapping("/demand-forecasts")
     @PreAuthorize("hasAnyRole('ADMIN', 'OWNER', 'SALES', 'INVENTORY')")
     public ResponseEntity<List<Map<String, Object>>> getDemandForecasts() {
         return ResponseEntity.ok(demandPredictionService.generateForecastsForAllProducts());
+    }
+
+    // Feature 3: Manufacturing Priority
+    @GetMapping("/manufacturing-priority")
+    @PreAuthorize("hasAnyRole('ADMIN', 'OWNER', 'MANUFACTURING')")
+    public ResponseEntity<List<Map<String, Object>>> getManufacturingPriority() {
+        manufacturingPriorityService.calculatePrioritiesForAllOrders();
+        return ResponseEntity.ok(manufacturingPriorityService.getRankedManufacturingOrders());
     }
 
     // Feature 2: Smart Procurement

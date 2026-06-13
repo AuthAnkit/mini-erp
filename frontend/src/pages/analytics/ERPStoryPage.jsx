@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../../api/axios';
+import api from '../../api';
 
 export default function ERPStoryPage() {
   const [stories, setStories] = useState([]);
