@@ -13,7 +13,9 @@ public class CustomerController {
     private final CustomerRepository customerRepository;
 
     @GetMapping
-    public ResponseEntity<?> getAll() { return ResponseEntity.ok(customerRepository.findAll()); }
+    public ResponseEntity<?> getAll() {
+        return ResponseEntity.ok(customerRepository.findAll());
+    }
 
     @PostMapping
     public ResponseEntity<?> create(@RequestBody Customer customer) {

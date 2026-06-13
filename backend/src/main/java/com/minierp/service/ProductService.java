@@ -27,6 +27,10 @@ public class ProductService {
                 .orElseThrow(() -> new RuntimeException("Product not found: " + id));
     }
 
+    public ArrayList<Product> getavail() {
+        return (ArrayList<Product>) productRepository.findAvailableProducts();
+    }
+
     @Transactional
     public Product createProduct(Product product) {
         if (product.getRef() == null || product.getRef().isEmpty()) {
@@ -87,8 +91,7 @@ public class ProductService {
     @Transactional
     public void removeBomComponent(Long productId, Long componentId) {
         Product parent = getById(productId);
-        parent.getBomComponents().removeIf(bc ->
-                bc.getComponentProduct().getId().equals(componentId));
+        parent.getBomComponents().removeIf(bc -> bc.getComponentProduct().getId().equals(componentId));
         productRepository.save(parent);
     }
 
@@ -131,8 +134,7 @@ public class ProductService {
                             "target", String.valueOf(p.getId()),
                             "label", "×" + bc.getQuantity().intValue(),
                             "qty", bc.getQuantity(),
-                            "uom", bc.getUom()
-                    ));
+                            "uom", bc.getUom()));
                     visitedEdges.add(edgeKey);
                     Long cId = bc.getComponentProduct().getId();
                     if (!visitedNodes.contains(cId)) {
@@ -174,10 +176,11 @@ public class ProductService {
     }
 
     private void simulateRecursive(Product product, Double qtyNeeded,
-                                   List<Map<String, Object>> actions,
-                                   List<Map<String, Object>> stockImpact,
-                                   Set<Long> visited, int depth) {
-        if (depth > 5 || visited.contains(product.getId())) return;
+            List<Map<String, Object>> actions,
+            List<Map<String, Object>> stockImpact,
+            Set<Long> visited, int depth) {
+        if (depth > 5 || visited.contains(product.getId()))
+            return;
         visited.add(product.getId());
 
         double free = product.getFreeToUseQty();
@@ -203,17 +206,19 @@ public class ProductService {
                 action.put("qty", shortfall);
 
                 if (product.getProcurementMethod().name().equals("MANUFACTURING")) {
-                    action.put("description", "Auto-create Manufacturing Order for " + shortfall + "x " + product.getName());
+                    action.put("description",
+                            "Auto-create Manufacturing Order for " + shortfall + "x " + product.getName());
                     // Recursively check components
                     for (BomComponent bc : product.getBomComponents()) {
                         double componentQtyNeeded = bc.getQuantity() * shortfall;
-                        simulateRecursive(bc.getComponentProduct(), componentQtyNeeded, actions, stockImpact, visited, depth + 1);
+                        simulateRecursive(bc.getComponentProduct(), componentQtyNeeded, actions, stockImpact, visited,
+                                depth + 1);
                     }
 
                     // Estimate duration from BoM operations
                     int totalMins = product.getBomOperations().stream()
                             .mapToInt(BomOperation::getExpectedDurationMinutes).sum();
-                    action.put("estimatedDurationMinutes", (int)(totalMins * Math.ceil(shortfall)));
+                    action.put("estimatedDurationMinutes", (int) (totalMins * Math.ceil(shortfall)));
                 } else {
                     action.put("description", "Auto-create Purchase Order for " + shortfall + "x " + product.getName());
                     if (product.getVendor() != null) {
@@ -226,13 +231,15 @@ public class ProductService {
     }
 
     private void buildGraphRecursive(Long productId, List<Map<String, Object>> nodes,
-                                      List<Map<String, Object>> edges, Set<Long> visited,
-                                      int maxDepth, int currentDepth) {
-        if (currentDepth > maxDepth || visited.contains(productId)) return;
+            List<Map<String, Object>> edges, Set<Long> visited,
+            int maxDepth, int currentDepth) {
+        if (currentDepth > maxDepth || visited.contains(productId))
+            return;
         visited.add(productId);
 
         Product product = productRepository.findById(productId).orElse(null);
-        if (product == null) return;
+        if (product == null)
+            return;
 
         nodes.add(buildNode(product));
 
@@ -243,8 +250,7 @@ public class ProductService {
                     "source", String.valueOf(componentId),
                     "target", String.valueOf(productId),
                     "label", "×" + bc.getQuantity().intValue(),
-                    "qty", bc.getQuantity()
-            ));
+                    "qty", bc.getQuantity()));
             buildGraphRecursive(componentId, nodes, edges, visited, maxDepth, currentDepth + 1);
         }
     }
@@ -268,11 +274,14 @@ public class ProductService {
     }
 
     private boolean wouldCreateCircularDep(Long parentId, Long componentId) {
-        if (parentId.equals(componentId)) return true;
+        if (parentId.equals(componentId))
+            return true;
         Product component = productRepository.findById(componentId).orElse(null);
-        if (component == null) return false;
+        if (component == null)
+            return false;
         for (BomComponent bc : component.getBomComponents()) {
-            if (wouldCreateCircularDep(parentId, bc.getComponentProduct().getId())) return true;
+            if (wouldCreateCircularDep(parentId, bc.getComponentProduct().getId()))
+                return true;
         }
         return false;
     }

@@ -27,7 +27,7 @@ public class BusinessSimulatorService {
         double currentRevenue = calculateCurrentRevenue();
         double currentCosts = calculateCurrentCosts();
         double currentProfit = currentRevenue - currentCosts;
-        
+
         double projectedRevenue = currentRevenue;
         double projectedCosts = currentCosts;
 
@@ -37,7 +37,8 @@ public class BusinessSimulatorService {
         } else if ("DEMAND_SHOCK".equals(scenarioType)) {
             double percentChange = Double.parseDouble(params.getOrDefault("percentChange", "0").toString());
             projectedRevenue = currentRevenue * (1 + (percentChange / 100.0));
-            projectedCosts = currentCosts * (1 + (percentChange / 100.0) * 0.8); // Costs increase slightly less than demand
+            projectedCosts = currentCosts * (1 + (percentChange / 100.0) * 0.8); // Costs increase slightly less than
+                                                                                 // demand
         } else if ("COST_INCREASE".equals(scenarioType)) {
             double percentChange = Double.parseDouble(params.getOrDefault("percentChange", "0").toString());
             projectedCosts = currentCosts * (1 + (percentChange / 100.0));
@@ -79,12 +80,13 @@ public class BusinessSimulatorService {
                 .mapToDouble(p -> p.getCostPrice().doubleValue() * p.getOnHandQty())
                 .sum();
     }
-    
+
     private String buildInsight(String type, double impact, double projProfit, double currProfit) {
         if (impact > 0) {
             return "This scenario is favorable. It could increase profit by ₹" + String.format("%,.2f", impact) + ".";
         } else if (impact < 0) {
-            return "This scenario is risky. It could decrease profit by ₹" + String.format("%,.2f", Math.abs(impact)) + ".";
+            return "This scenario is risky. It could decrease profit by ₹" + String.format("%,.2f", Math.abs(impact))
+                    + ".";
         } else {
             return "This scenario has no net impact on current profit.";
         }

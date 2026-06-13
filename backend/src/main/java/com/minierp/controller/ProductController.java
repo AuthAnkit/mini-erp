@@ -61,87 +61,40 @@ public class ProductController {
 
     @GetMapping("/{id}/graph")
     public ResponseEntity<?> getProductGraph(@PathVariable Long id,
-                                              @RequestParam(defaultValue = "5") int depth) {
+            @RequestParam(defaultValue = "5") int depth) {
         return ResponseEntity.ok(productService.buildGraph(id, depth));
     }
 
     @GetMapping("/{id}/simulate")
     public ResponseEntity<?> simulate(@PathVariable Long id,
-                                       @RequestParam Double qty) {
+            @RequestParam Double qty) {
         return ResponseEntity.ok(productService.simulate(id, qty));
-    }
-
-    // ── Helper: safe string extraction (empty string treated as null) ──────────
-    private String str(Map<String, Object> body, String key) {
-        Object val = body.get(key);
-        if (val == null) return null;
-        String s = val.toString().trim();
-        return s.isEmpty() ? null : s;
     }
 
     private Product mapToProduct(Map<String, Object> body) {
         Product p = new Product();
-
-        // Required string fields
-        String name = str(body, "name");
-        if (name == null || name.isEmpty()) {
-            throw new RuntimeException("Product name is required");
+        if (body.get("name") != null)
+            p.setName(body.get("name").toString());
+        if (body.get("ref") != null)
+            p.setRef(body.get("ref").toString());
+        if (body.get("description") != null)
+            p.setDescription(body.get("description").toString());
+        if (body.get("category") != null)
+            p.setCategory(body.get("category").toString());
+        if (body.get("salesPrice") != null)
+            p.setSalesPrice(new java.math.BigDecimal(body.get("salesPrice").toString()));
+        if (body.get("costPrice") != null)
+            p.setCostPrice(new java.math.BigDecimal(body.get("costPrice").toString()));
+        if (body.get("onHandQty") != null)
+            p.setOnHandQty(Double.valueOf(body.get("onHandQty").toString()));
+        if (body.get("procureOnDemand") != null)
+            p.setProcureOnDemand(Boolean.parseBoolean(body.get("procureOnDemand").toString()));
+        if (body.get("procurementMethod") != null)
+            p.setProcurementMethod(ProcurementMethod.valueOf(body.get("procurementMethod").toString()));
+        if (body.get("vendorId") != null) {
+            Long vendorId = Long.valueOf(body.get("vendorId").toString());
+            vendorRepository.findById(vendorId).ifPresent(p::setVendor);
         }
-        p.setName(name);
-
-        // Optional string fields — treat empty as null
-        String ref = str(body, "ref");
-        if (ref != null) p.setRef(ref);
-
-        String description = str(body, "description");
-        if (description != null) p.setDescription(description);
-
-        String category = str(body, "category");
-        if (category != null) p.setCategory(category);
-
-        // Numeric fields — safe parse with fallback
-        try {
-            Object sp = body.get("salesPrice");
-            if (sp != null) p.setSalesPrice(new java.math.BigDecimal(sp.toString()));
-
-            Object cp = body.get("costPrice");
-            if (cp != null) p.setCostPrice(new java.math.BigDecimal(cp.toString()));
-
-            Object oq = body.get("onHandQty");
-            if (oq != null) p.setOnHandQty(Double.valueOf(oq.toString()));
-        } catch (NumberFormatException e) {
-            throw new RuntimeException("Invalid number value for price or quantity: " + e.getMessage());
-        }
-
-        // Boolean field
-        Object pod = body.get("procureOnDemand");
-        if (pod != null) {
-            p.setProcureOnDemand(Boolean.parseBoolean(pod.toString()));
-        }
-
-        // Enum field — only parse if non-empty string, silently skip empty/null
-        String pm = str(body, "procurementMethod");
-        if (pm != null) {
-            try {
-                p.setProcurementMethod(ProcurementMethod.valueOf(pm.toUpperCase()));
-            } catch (IllegalArgumentException e) {
-                throw new RuntimeException("Invalid procurement method: '" + pm + "'. Must be PURCHASE or MANUFACTURING.");
-            }
-        }
-
-        // Vendor FK — only if procurementMethod is PURCHASE
-        Object vendorIdObj = body.get("vendorId");
-        if (vendorIdObj != null) {
-            try {
-                Long vendorId = Long.valueOf(vendorIdObj.toString());
-                if (vendorId > 0) {
-                    vendorRepository.findById(vendorId).ifPresent(p::setVendor);
-                }
-            } catch (NumberFormatException e) {
-                // ignore invalid vendorId silently
-            }
-        }
-
         return p;
     }
 }
