@@ -1,0 +1,42 @@
+# .gitignore for IntelliJ IDEA project root
+
+# IDE Config
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Build artifacts
+target/
+build/
+dist/
+out/
+
+# Maven
+/logs/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+.flattened-pom.xml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE Runtime
+*.log
+*.class
+*.jar
+*.war
+
+# Environment files
+.env
+.env.local
+
+# Database
+*.db
+*.sqlite
+

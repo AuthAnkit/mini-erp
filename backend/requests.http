@@ -1,0 +1,119 @@
+### Mini ERP Backend API Requests
+### Base URL: http://localhost:8080
+
+### Variables
+@baseUrl = http://localhost:8080
+@adminToken =
+@userToken =
+
+###
+### 1. LOGIN - Get Admin Token
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "loginId": "admin",
+  "password": "admin123"
+}
+
+> {%
+    client.global.set("adminToken", response.body.token);
+%}
+
+###
+### 2. LOGIN - Get Sales User Token
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "loginId": "ravi",
+  "password": "ravi123"
+}
+
+> {%
+    client.global.set("userToken", response.body.token);
+%}
+
+###
+### 3. GET CURRENT USER INFO
+GET {{baseUrl}}/api/auth/me
+Authorization: Bearer {{adminToken}}
+
+###
+### 4. GET ALL PRODUCTS
+GET {{baseUrl}}/api/products
+Authorization: Bearer {{adminToken}}
+
+###
+### 5. GET PRODUCT GRAPH (BoM Dependencies)
+GET {{baseUrl}}/api/products/graph
+Authorization: Bearer {{adminToken}}
+
+###
+### 6. GET SINGLE PRODUCT TREE
+GET {{baseUrl}}/api/products/1/graph
+Authorization: Bearer {{adminToken}}
+
+###
+### 7. SIMULATE PRODUCT ORDER (What-If Analysis)
+GET {{baseUrl}}/api/products/1/simulate?qty=10
+Authorization: Bearer {{adminToken}}
+
+###
+### 8. GET SALES ORDERS
+GET {{baseUrl}}/api/sales-orders
+Authorization: Bearer {{adminToken}}
+
+###
+### 9. CREATE SALES ORDER
+POST {{baseUrl}}/api/sales-orders
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "customerId": 1,
+  "customerName": "Rajesh Home Furnishings",
+  "lines": [
+    {
+      "productId": 1,
+      "orderedQty": 5
+    }
+  ]
+}
+
+###
+### 10. GET PURCHASE ORDERS
+GET {{baseUrl}}/api/purchase-orders
+Authorization: Bearer {{adminToken}}
+
+###
+### 11. GET MANUFACTURING ORDERS
+GET {{baseUrl}}/api/manufacturing-orders
+Authorization: Bearer {{adminToken}}
+
+###
+### 12. GET DASHBOARD KPIs
+GET {{baseUrl}}/api/dashboard
+Authorization: Bearer {{adminToken}}
+
+###
+### 13. GET AUDIT LOGS
+GET {{baseUrl}}/api/audit-logs?page=0&size=20
+Authorization: Bearer {{adminToken}}
+
+###
+### 14. GET AUDIT LOG FOR SPECIFIC RECORD
+GET {{baseUrl}}/api/audit-logs/record/PRODUCT/1
+Authorization: Bearer {{adminToken}}
+
+###
+### 15. H2 Console (Open in browser)
+GET {{baseUrl}}/h2-console
+
+###
+### Notes:
+### - Default H2 Database credentials: sa / (empty password)
+### - JDBC URL: jdbc:h2:mem:minierpdb
+### - All endpoints require JWT token (except login)
+### - Demo data is auto-seeded on first run
+
