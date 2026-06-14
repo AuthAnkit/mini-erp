@@ -98,7 +98,7 @@ public class DeadStockService {
         map.put("lastSaleDate", a.getLastSaleDate());
         map.put("daysSinceLastSale", a.getDaysSinceLastSale());
         map.put("currentOnHandQty", a.getCurrentOnHandQty());
-        map.put("inventoryValue", String.format("%.2f", a.getInventoryValue()));
+        map.put("inventoryValue", Math.round(a.getInventoryValue() * 100.0) / 100.0);
         map.put("deadStockReason", a.getDeadStockReason());
         map.put("recommendedAction", a.getRecommendedAction());
         map.put("alertStatus", a.getAlertStatus());

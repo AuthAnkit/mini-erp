@@ -18,7 +18,7 @@ export default function DeadStockPage() {
       : b.daysSinceLastSale - a.daysSinceLastSale
   );
 
-  const totalLocked = alerts.reduce((s, a) => s + a.inventoryValue, 0);
+  const totalLocked = alerts.reduce((s, a) => s + Number(a.inventoryValue), 0);
 
   const getActionColor = (action) => {
     if (!action) return 'text-gray-400';
@@ -43,7 +43,7 @@ export default function DeadStockPage() {
           <p className="text-xs text-gray-500 mt-1">Dead Stock Products</p>
         </div>
         <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-5 text-center">
-          <p className="text-3xl font-black text-red-400">₹{totalLocked.toLocaleString()}</p>
+          <p className="text-3xl font-black text-red-400">₹{totalLocked.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
           <p className="text-xs text-gray-500 mt-1">Total Capital Locked</p>
         </div>
         <div className="bg-[#141720] border border-[#1e2132] rounded-xl p-5 text-center">
@@ -117,7 +117,7 @@ export default function DeadStockPage() {
                   <div className="grid grid-cols-2 gap-3 mb-5">
                     <div className="bg-[#1a1d27] rounded-lg p-3">
                       <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Locked Value</p>
-                      <p className="text-lg font-black text-red-400">₹{a.inventoryValue.toLocaleString()}</p>
+                      <p className="text-lg font-black text-red-400">₹{Number(a.inventoryValue).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                     </div>
                     <div className="bg-[#1a1d27] rounded-lg p-3">
                       <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Qty in Stock</p>
